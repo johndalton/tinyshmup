@@ -16,7 +16,7 @@ ss    = 1
 pbullets = {}
 bdy   = -3
 
-function moveship()
+function move_player()
  sdx=0
  sdy=0
 
@@ -25,7 +25,7 @@ function moveship()
  if btn(2) then sdy = sa*-1 end
  if btn(3) then sdy = sa end
  
- if btnp(4) then firebullet() end
+ if btnp(4) then fire_bullet() end
  
  shipx += sdx
  shipy += sdy
@@ -36,7 +36,7 @@ function moveship()
  if shipy>120 then shipy=120 end
 end
 
-function shipsprite()
+function ship_sprite()
  local s=1
  
  if (sdx==0 and sdy!=0) then
@@ -50,8 +50,8 @@ function shipsprite()
  return s
 end 
 
-function drawship()
- spr(shipsprite(),shipx,shipy)
+function draw_player()
+ spr(ship_sprite(),shipx,shipy)
  
  --sspr(8,8,16,16,shipx,shipy)
  
@@ -60,7 +60,7 @@ function drawship()
  --sspr(8,8,8,16,shipx+8,shipy,8,16,1)
 end
 
-function firebullet()
+function fire_bullet()
  if (#pbullets<5)
  then
   local bullet={["x"]=shipx,["y"]=shipy-1}
@@ -68,20 +68,20 @@ function firebullet()
  end
 end
 
-function removebullet(b)
+function remove_bullet(b)
  del(pbullets,b)
 end 
 
-function movebullet(b)
+function move_bullet(b)
 	b.y += bdy
-	if (b.y<0) then removebullet(b) end
+	if (b.y<0) then remove_bullet(b) end
 end
 
-function drawbullet(b)
+function draw_bullet(b)
  spr(0,b.x,b.y)
 end
 
-function new_ship(x,y,n)
+function new_enemy(x,y,n)
   local s={}
   s.x=x
   s.y=y
@@ -101,10 +101,10 @@ function new_ship(x,y,n)
 end
 
 function _init()
-  add(aliens, new_ship(5,5,8))
+  add(aliens, new_enemy(5,5,8))
 end
 
-function move_ship(s)
+function move_enemy(s)
   if (s.ticks==0) then
     s.ticks=s.timers[s.timer]
     s.timer+=1
@@ -134,7 +134,7 @@ function move_ship(s)
   if(s.x>127 or s.x<0 or s.y>127 or s.y<0) del(aliens,s)
 end
 
-function draw_ship(s)
+function draw_enemy(s)
   --print("ticks:"..s.ticks,2,2)
   --print("dx:"..s.dx,s.x-10,s.y-4)
   --print("dy:"..s.dy,s.x+10,s.y-4)
@@ -142,19 +142,19 @@ function draw_ship(s)
 end
 
 function _update()
-  foreach(aliens, move_ship)
-  if(#aliens<3) add(aliens, new_ship(flr(rnd(80)),5,8))
+  foreach(aliens, move_enemy)
+  if(#aliens<3) add(aliens, new_enemy(flr(rnd(80)),5,8))
 
-  moveship()
-  foreach(pbullets,movebullet)
+  foreach(pbullets,move_bullet)
+
+  move_player()
 end
 
 function _draw()
   cls()
-  foreach(aliens, draw_ship)
-
-  drawship()
-  foreach(pbullets,drawbullet)
+  foreach(aliens, draw_enemy)
+  foreach(pbullets,draw_bullet)
+  draw_player()
 end
 
 __gfx__
