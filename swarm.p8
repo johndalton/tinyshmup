@@ -3,7 +3,7 @@ version 8
 __lua__
 aliens={}
 
-new_ship=function(x,y,n)
+function new_ship(x,y,n)
   local s={}
   s.x=x
   s.y=y
