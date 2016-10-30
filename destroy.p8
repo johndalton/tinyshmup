@@ -14,6 +14,7 @@ ss    = 1
 
 -- bullets
 pbullets = {}
+pmaxshots= 8
 pcannon  = 0  -- left or right
 pcooldown= 3  -- between shots
 pshottmr = 0  -- cooldown tmr
@@ -29,13 +30,10 @@ function move_player()
  if btn(2) then sdy = sa*-1 end
  if btn(3) then sdy = sa end
  
- if btn(4)
+ if btn(4) and pshottmr == 0
  then
-  if pshottmr == 0
-  then
-   fire_bullet()
-   pshottmr = pcooldown
-  end
+  fire_bullet()
+  pshottmr = pcooldown
  end
  
  shipx += sdx
@@ -72,7 +70,7 @@ function draw_player()
 end
 
 function fire_bullet()
- if (#pbullets<8)
+ if (#pbullets<pmaxshots)
  then
   local boffset=2
   if (pcannon==1)
