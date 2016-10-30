@@ -13,6 +13,8 @@ function setup_player()
  p.d  = 0
  p.a  = 2
  p.sp = 1
+ p.w  = 8
+ p.h  = 7
 
  -- bullets
  p.bullets  = {}
@@ -38,6 +40,7 @@ function move_player()
  if btn(4) and p.shottmr == 0
  then
   fire_bullet()
+  sfx(2)
   p.shottmr = p.cooldown
  end
  
@@ -85,7 +88,7 @@ function fire_bullet()
   else
    p.cannon=1
   end
-  local bullet={["x"]=p.x+boffset,["y"]=p.y-1}
+  local bullet={["x"]=p.x+boffset,["y"]=p.y-1,["w"]=1,["h"]=2}
   add(p.bullets,bullet)
  end
 end
@@ -97,10 +100,28 @@ end
 function move_bullet(b)
 	b.y += p.bdy
 	if (b.y<0) then remove_bullet(b) end
+ for a in all(aliens) do
+  if check_hit(a,b)
+  then
+   sfx(1)
+   a.dmg += 1
+   remove_bullet(b)
+  end
+ end
 end
 
 function draw_bullet(b)
  spr(0,b.x,b.y)
+end
+
+function check_hit(a, b)
+ if collide_rect(to_rect(a),
+      to_rect(b)) 
+ then
+  return true
+ else
+  return false
+ end
 end
 
 function new_enemy(x,y,n)
@@ -110,6 +131,10 @@ function new_enemy(x,y,n)
   s.dx=0
   s.dy=0
   s.a=1
+  s.w=8
+  s.h=7
+  s.hp=2
+  s.dmg=0
   s.timers={4,20,4}
   s.timer=1
   s.ticks=0
@@ -122,12 +147,174 @@ function new_enemy(x,y,n)
   return s
 end
 
+-- ***
+-- *** collision detection
+-- *** from: http://www.lexaloffle.com/bbs/?tid=2179
+-- *** pixel-perfect collision detection by joshmillard
+-- ***
+
+-- return a rectangle structure
+-- based on a sprite, with
+-- start and end x/y screen
+-- coordinates
+function to_rect(sp)
+ local r = {}
+ r.x1 = sp.x
+ r.y1 = sp.y
+ r.x2 = sp.x + sp.w - 1
+ r.y2 = sp.y + sp.h - 1
+ return r
+end
+
+-- simple box collision:
+-- takes rectangle coords for
+-- two sprites.
+-- return true if bounding
+-- rectangles overlap, false
+-- otherwise
+function collide_rect(r1,r2)
+ print("a x "..r1.x1.." y "..r1.y1, 0, 16, 1)
+ print("b x "..r2.x1.." y "..r2.y1, 0, 16, 1)
+
+ if((r1.x1 > r2.x2) or
+    (r2.x1 > r1.x2) or
+    (r1.y1 > r2.y2) or
+    (r2.y1 > r1.y2)) then
+  return false
+ end
+ return true
+end
+
+-- pixel-perfect collsion:
+-- takes two sprite sheet 
+-- numbers and a pixel offset
+-- in x and y of the second
+-- sprite from the first.
+-- return true if any pixels in
+-- sprites overlap, false
+-- otherwise
+function collide_pixel(sp1,sp2,xoff,yoff)
+ local cx = 40 -- test canvas
+ local cy = 20
+ print("a x "..r1.x1.." y "..r1.y1, 0, 16)
+ rectfill(cx,cy,cx+7,cy+7,7)
+  
+ local sh1 = shtcoord(sp1.sp)
+ local sh2 = shtcoord(sp2.sp)
+-- some debug text
+-- print("sh1 x "..sh1.x.." y "..sh1.y,
+--  70,20)
+-- print("sh2 x "..sh2.x.." y "..sh2.y,
+--  70,26)
+ 
+ -- a whack o' local vals
+ local a = nil
+ local b = nil
+ local colcount = 0
+ 
+ local xstart = 0
+ local xend = 7
+ local ystart = 0
+ local yend = 7
+ local x1off = 0
+ local x2off = 0
+ local y1off = 0
+ local y2off = 0
+ 
+ -- narrow range of collision
+ -- test based on offset of
+ -- two sprites
+ if(xoff > 0) then
+  xend = 7-xoff
+  x1off = xoff
+ elseif(xoff < 0) then
+  xend = 7+xoff
+  x2off = -xoff
+ end
+ if(yoff > 0) then
+  yend = 7-yoff
+  y1off = yoff
+ elseif(yoff < 0) then
+  yend = 7+yoff
+  y2off = -yoff
+ end
+
+-- further debug text
+-- print("xstart "..xstart.." y "..ystart,
+--  70,40,7)
+-- print("xend "..xend.." y "..yend,
+--  70,46,7)
+-- print("x1off "..x1off.." y "..y1off,
+--  70,52,7)
+-- print("x2off "..x2off.." y "..y2off,
+--  70,58,7)
+
+ -- draw rect outside of
+ -- active overlap area
+ rect(cx+xstart+x1off-1,
+   cy+ystart+y1off-1,
+   cx+xend+x1off+1,
+   cy+yend+y1off+1,9) 
+
+ -- do the actual test over
+ -- the overlap rectangle
+ for x=xstart,xend do
+  for y=ystart,yend do
+   a = sget(sh1.x+x+x1off,
+    sh1.y+y+y1off)
+   b = sget(sh2.x+x+x2off,
+    sh2.y+y+y2off)
+   if(a!=0 and b!=0) then
+    -- pixel overlap means
+    -- we collided
+    pset(cx+x+x1off,
+      cy+y+y1off,7)
+    colcount += 1
+   elseif(a!=0) then
+    pset(cx+x+x1off,
+      cy+y+y1off,8)
+   elseif(b!=0) then
+    pset(cx+x+x1off,
+      cy+y+y1off,12)
+   else
+    pset(cx+x+x1off,
+      cy+y+y1off,0)
+   end
+  end
+ end
+ print("(total pixel collisions: "..colcount..")",
+   3,96,5)
+ if(colcount > 0) then
+  return true
+ end
+ return false
+end
+
+-- return object with x,y pixel
+-- coords on sprite sheet of
+-- given sprite number
+function shtcoord(sp)
+ local sh = {}
+ sh.x = (sp%16)*8
+ sh.y = flr(sp/16)*8
+ return sh
+end
+
+-- ***
+-- *** end collision detection
+-- ***
+
 function _init()
   add(aliens, new_enemy(5,5,8))
   p=setup_player()
 end
 
 function move_enemy(s)
+  if (s.dmg > s.hp) then
+    sfx(0)
+    del(aliens,s)
+  end
+  
   if (s.ticks==0) then
     s.ticks=s.timers[s.timer]
     s.timer+=1
@@ -158,9 +345,9 @@ function move_enemy(s)
 end
 
 function draw_enemy(s)
-  --print("ticks:"..s.ticks,2,2)
-  --print("dx:"..s.dx,s.x-10,s.y-4)
-  --print("dy:"..s.dy,s.x+10,s.y-4)
+  -- print("ticks:"..s.ticks,2,2)
+  -- print("dx:"..s.dx,s.x-10,s.y-4)
+  -- print("dy:"..s.dy,s.x+10,s.y-4)
   spr(s.sprite, s.x, s.y)
 end
 
@@ -346,9 +533,9 @@ __map__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
-000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00030000346502b6501d65023650296502d65031650326503365033650306502a650246501f6501a65016650116500d6500b65008650066500365003650026500165001650016500165001650016500165001650
+000200003365034350305502e4502b650276500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000200003865014650366501365036650000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
