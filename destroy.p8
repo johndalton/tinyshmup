@@ -2,57 +2,62 @@ pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
 aliens={}
+p={}
 
--- player ship
--- fixme: move into list!
-shipx = 63
-shipy = 120
-sdx   = 0
-sdy   = 0
-sa    = 2
-ss    = 1
+function setup_player()
+ local p = {}
+ -- player ship
+ p.x  = 63
+ p.y  = 120
+ p.dx = 0
+ p.d  = 0
+ p.a  = 2
+ p.sp = 1
 
--- bullets
-pbullets = {}
-pmaxshots= 8
-pcannon  = 0  -- left or right
-pcooldown= 3  -- between shots
-pshottmr = 0  -- cooldown tmr
-bdy      = -4 -- bullet speed
+ -- bullets
+ p.bullets  = {}
+ p.maxshots = 8
+ p.cannon   = 0  -- left or right
+ p.cooldown = 3  -- between shots
+ p.shottmr  = 0  -- cooldown tmr
+ p.bdy      = -4 -- bullet speed
+
+ return p
+end
 
 function move_player()
- sdx=0
- sdy=0
- if pshottmr > 0 then pshottmr-=1 end
+ p.dx=0
+ p.dy=0
+ if p.shottmr > 0 then p.shottmr-=1 end
 
- if btn(0) then sdx = sa*-1 end
- if btn(1) then sdx = sa end
- if btn(2) then sdy = sa*-1 end
- if btn(3) then sdy = sa end
+ if btn(0) then p.dx = p.a*-1 end
+ if btn(1) then p.dx = p.a end
+ if btn(2) then p.dy = p.a*-1 end
+ if btn(3) then p.dy = p.a end
  
- if btn(4) and pshottmr == 0
+ if btn(4) and p.shottmr == 0
  then
   fire_bullet()
-  pshottmr = pcooldown
+  p.shottmr = p.cooldown
  end
  
- shipx += sdx
- shipy += sdy
+ p.x += p.dx
+ p.y += p.dy
 
- if shipx<0   then shipx=0 end
- if shipx>120 then shipx=120 end
- if shipy<0   then shipy=0 end
- if shipy>120 then shipy=120 end
+ if p.x<0   then p.x=0 end
+ if p.x>120 then p.x=120 end
+ if p.y<0   then p.y=0 end
+ if p.y>120 then p.y=120 end
 end
 
 function ship_sprite()
  local s=1
  
- if (sdx==0 and sdy!=0) then
+ if (p.dx==0 and p.dy!=0) then
   s=2
- elseif (sdx>0) then
+ elseif (p.dx>0) then
   s=3
- elseif (sdx<0) then
+ elseif (p.dx<0) then
   s=4
  end
  
@@ -60,37 +65,37 @@ function ship_sprite()
 end 
 
 function draw_player()
- spr(ship_sprite(),shipx,shipy)
+ spr(ship_sprite(),p.x,p.y)
  
- --sspr(8,8,16,16,shipx,shipy)
+ --sspr(8,8,16,16,p.x,p.y)
  
  -- draw half, then again flipped!
- --sspr(8,8,8,16,shipx,shipy)
- --sspr(8,8,8,16,shipx+8,shipy,8,16,1)
+ --sspr(8,8,8,16,p.x,p.y)
+ --sspr(8,8,8,16,p.x+8,p.y,8,16,1)
 end
 
 function fire_bullet()
- if (#pbullets<pmaxshots)
+ if (#p.bullets<p.maxshots)
  then
   local boffset=2
-  if (pcannon==1)
+  if (p.cannon==1)
   then
    boffset+=3
-   pcannon=0
+   p.cannon=0
   else
-   pcannon=1
+   p.cannon=1
   end
-  local bullet={["x"]=shipx+boffset,["y"]=shipy-1}
-  add(pbullets,bullet)
+  local bullet={["x"]=p.x+boffset,["y"]=p.y-1}
+  add(p.bullets,bullet)
  end
 end
 
 function remove_bullet(b)
- del(pbullets,b)
+ del(p.bullets,b)
 end 
 
 function move_bullet(b)
-	b.y += bdy
+	b.y += p.bdy
 	if (b.y<0) then remove_bullet(b) end
 end
 
@@ -119,6 +124,7 @@ end
 
 function _init()
   add(aliens, new_enemy(5,5,8))
+  p=setup_player()
 end
 
 function move_enemy(s)
@@ -162,7 +168,7 @@ function _update()
   foreach(aliens, move_enemy)
   if(#aliens<3) add(aliens, new_enemy(flr(rnd(80)),5,8))
 
-  foreach(pbullets,move_bullet)
+  foreach(p.bullets,move_bullet)
 
   move_player()
 end
@@ -170,7 +176,7 @@ end
 function _draw()
   cls()
   foreach(aliens, draw_enemy)
-  foreach(pbullets,draw_bullet)
+  foreach(p.bullets,draw_bullet)
   draw_player()
 end
 
