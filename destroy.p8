@@ -1,146 +1,150 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
-aliens={}
+
+--******************************
+-- Initialization
+--******************************
+
+-- The player
 p={}
 
+-- Aliens
+aliens={}
+enemy_types={}
+enemy_types["saucer"]={
+  dx=0, dy=0, a=1, w=8, h=7,
+  hp=2, dmg=0, timer=1, ticks=0,
+  xmove=0, ymove=0, sprite=8,
+  timers={4,20,2},
+  dxtarget={3,0,-3,0},
+  dytarget={0,1,-1,0,1}
+}
+enemy_types["diamond"]={
+  dx=0, dy=0, a=1, w=7, h=6,
+  hp=2, dmg=0, timer=1, ticks=0,
+  xmove=0, ymove=0, sprite=9,
+  timers={4,15,2},
+  dxtarget={3,-1,0},
+  dytarget={0,1}
+}
+
+
 function setup_player()
- local p = {}
- -- player ship
- p.x  = 63
- p.y  = 120
- p.dx = 0
- p.d  = 0
- p.a  = 2
- p.sp = 1
- p.w  = 8
- p.h  = 7
+  local p = {}
+  -- player ship
+  p.x  = 63
+  p.y  = 120
+  p.dx = 0
+  p.d  = 0
+  p.a  = 2
+  p.sp = 1
+  p.w  = 8
+  p.h  = 7
 
- -- bullets
- p.bullets  = {}
- p.maxshots = 8
- p.cannon   = 0  -- left or right
- p.cooldown = 5  -- between shots
- p.shottmr  = 0  -- cooldown tmr
- p.bdy      = -4 -- bullet speed
+  -- bullets
+  p.bullets  = {}
+  p.maxshots = 8
+  p.cannon   = 0  -- left or right
+  p.cooldown = 5  -- between shots
+  p.shottmr  = 0  -- cooldown tmr
+  p.bdy      = -4 -- bullet speed
 
- return p
+  return p
 end
 
 function move_player()
- p.dx=0
- p.dy=0
- if p.shottmr > 0 then p.shottmr-=1 end
+  p.dx=0
+  p.dy=0
+  if p.shottmr > 0 then p.shottmr-=1 end
 
- if btn(0) then p.dx = p.a*-1 end
- if btn(1) then p.dx = p.a end
- if btn(2) then p.dy = p.a*-1 end
- if btn(3) then p.dy = p.a end
+  if btn(0) then p.dx = p.a*-1 end
+  if btn(1) then p.dx = p.a end
+  if btn(2) then p.dy = p.a*-1 end
+  if btn(3) then p.dy = p.a end
  
- if btn(4) and p.shottmr == 0
- then
-  fire_bullet()
-  sfx(2)
-  p.shottmr = p.cooldown
- end
+  if btn(4) and p.shottmr == 0
+  then
+    fire_bullet()
+    sfx(2)
+    p.shottmr = p.cooldown
+  end
  
- p.x += p.dx
- p.y += p.dy
+  p.x += p.dx
+  p.y += p.dy
 
- if p.x<0   then p.x=0 end
- if p.x>120 then p.x=120 end
- if p.y<0   then p.y=0 end
- if p.y>120 then p.y=120 end
+  if p.x<0   then p.x=0 end
+  if p.x>120 then p.x=120 end
+  if p.y<0   then p.y=0 end
+  if p.y>120 then p.y=120 end
 end
 
 function ship_sprite()
- local s=1
+  local s=1
  
- if (p.dx==0 and p.dy!=0) then
-  s=2
- elseif (p.dx>0) then
-  s=3
- elseif (p.dx<0) then
-  s=4
- end
+  if (p.dx==0 and p.dy!=0) then
+    s=2
+  elseif (p.dx>0) then
+    s=3
+  elseif (p.dx<0) then
+    s=4
+  end
  
- return s
+  return s
 end 
 
 function draw_player()
- spr(ship_sprite(),p.x,p.y)
+  spr(ship_sprite(),p.x,p.y)
  
- --sspr(8,8,16,16,p.x,p.y)
+  --sspr(8,8,16,16,p.x,p.y)
  
- -- draw half, then again flipped!
- --sspr(8,8,8,16,p.x,p.y)
- --sspr(8,8,8,16,p.x+8,p.y,8,16,1)
+  -- draw half, then again flipped!
+  --sspr(8,8,8,16,p.x,p.y)
+  --sspr(8,8,8,16,p.x+8,p.y,8,16,1)
 end
 
 function fire_bullet()
- if (#p.bullets<p.maxshots)
- then
-  local boffset=2
-  if (p.cannon==1)
+  if (#p.bullets<p.maxshots)
   then
-   boffset+=3
-   p.cannon=0
-  else
-   p.cannon=1
+    -- bullets fire from alternate cannons:
+    -- here we set the appropriate x offset.
+    local boffset=2
+    if (p.cannon==1)
+    then
+      boffset+=3
+      p.cannon=0
+    else
+      p.cannon=1
+    end
+    local bullet={["x"]=p.x+boffset,["y"]=p.y-1,["w"]=1,["h"]=2}
+    add(p.bullets,bullet)
   end
-  local bullet={["x"]=p.x+boffset,["y"]=p.y-1,["w"]=1,["h"]=2}
-  add(p.bullets,bullet)
- end
 end
 
 function remove_bullet(b)
- del(p.bullets,b)
+  del(p.bullets,b)
 end 
 
 function move_bullet(b)
-	b.y += p.bdy
-	if (b.y<0) then remove_bullet(b) end
- for a in all(aliens) do
-  if check_hit(a,b)
-  then
-   sfx(1)
-   a.dmg += 1
-   remove_bullet(b)
+  b.y += p.bdy
+  if (b.y<0) then remove_bullet(b) end
+  for a in all(aliens) do
+    if check_hit(a,b)
+    then
+      sfx(1)
+      a.dmg += 1
+      remove_bullet(b)
+    end
   end
- end
 end
 
 function draw_bullet(b)
- spr(0,b.x,b.y)
+  spr(0,b.x,b.y)
 end
 
 function check_hit(a, b)
- if collide_rect(to_rect(a),
-      to_rect(b)) 
- then
-  return true
- else
-  return false
- end
+  return collide_rect(to_rect(a), to_rect(b)) 
 end
-
-enemy_types={}
-enemy_types["saucer"]={
- dx=0, dy=0, a=1, w=8, h=7,
- hp=2, dmg=0, timer=1, ticks=0,
- xmove=0, ymove=0, sprite=8,
- timers={4,20,2},
- dxtarget={3,0,-3,0},
- dytarget={0,1,-1,0,1}
-}
-enemy_types["diamond"]={
- dx=0, dy=0, a=1, w=7, h=6,
- hp=2, dmg=0, timer=1, ticks=0,
- xmove=0, ymove=0, sprite=9,
- timers={4,15,2},
- dxtarget={3,-1,0},
- dytarget={0,1}
-}
 
 function random_enemy()
   choice=rnd(2)
@@ -170,18 +174,20 @@ end
 -- *** from: http://www.lexaloffle.com/bbs/?tid=2179
 -- *** pixel-perfect collision detection by joshmillard
 -- ***
+-- *** N.B. Only using box collison for now, will revisit
+-- *** pixel-perfect collisions if necessary.
 
 -- return a rectangle structure
 -- based on a sprite, with
 -- start and end x/y screen
 -- coordinates
 function to_rect(sp)
- local r = {}
- r.x1 = sp.x
- r.y1 = sp.y
- r.x2 = sp.x + sp.w - 1
- r.y2 = sp.y + sp.h - 1
- return r
+  local r = {}
+  r.x1 = sp.x
+  r.y1 = sp.y
+  r.x2 = sp.x + sp.w - 1
+  r.y2 = sp.y + sp.h - 1
+  return r
 end
 
 -- simple box collision:
@@ -191,131 +197,13 @@ end
 -- rectangles overlap, false
 -- otherwise
 function collide_rect(r1,r2)
- print("a x "..r1.x1.." y "..r1.y1, 0, 16, 1)
- print("b x "..r2.x1.." y "..r2.y1, 0, 16, 1)
-
- if((r1.x1 > r2.x2) or
-    (r2.x1 > r1.x2) or
-    (r1.y1 > r2.y2) or
-    (r2.y1 > r1.y2)) then
-  return false
- end
- return true
-end
-
--- pixel-perfect collsion:
--- takes two sprite sheet 
--- numbers and a pixel offset
--- in x and y of the second
--- sprite from the first.
--- return true if any pixels in
--- sprites overlap, false
--- otherwise
-function collide_pixel(sp1,sp2,xoff,yoff)
- local cx = 40 -- test canvas
- local cy = 20
- print("a x "..r1.x1.." y "..r1.y1, 0, 16)
- rectfill(cx,cy,cx+7,cy+7,7)
-  
- local sh1 = shtcoord(sp1.sp)
- local sh2 = shtcoord(sp2.sp)
--- some debug text
--- print("sh1 x "..sh1.x.." y "..sh1.y,
---  70,20)
--- print("sh2 x "..sh2.x.." y "..sh2.y,
---  70,26)
- 
- -- a whack o' local vals
- local a = nil
- local b = nil
- local colcount = 0
- 
- local xstart = 0
- local xend = 7
- local ystart = 0
- local yend = 7
- local x1off = 0
- local x2off = 0
- local y1off = 0
- local y2off = 0
- 
- -- narrow range of collision
- -- test based on offset of
- -- two sprites
- if(xoff > 0) then
-  xend = 7-xoff
-  x1off = xoff
- elseif(xoff < 0) then
-  xend = 7+xoff
-  x2off = -xoff
- end
- if(yoff > 0) then
-  yend = 7-yoff
-  y1off = yoff
- elseif(yoff < 0) then
-  yend = 7+yoff
-  y2off = -yoff
- end
-
--- further debug text
--- print("xstart "..xstart.." y "..ystart,
---  70,40,7)
--- print("xend "..xend.." y "..yend,
---  70,46,7)
--- print("x1off "..x1off.." y "..y1off,
---  70,52,7)
--- print("x2off "..x2off.." y "..y2off,
---  70,58,7)
-
- -- draw rect outside of
- -- active overlap area
- rect(cx+xstart+x1off-1,
-   cy+ystart+y1off-1,
-   cx+xend+x1off+1,
-   cy+yend+y1off+1,9) 
-
- -- do the actual test over
- -- the overlap rectangle
- for x=xstart,xend do
-  for y=ystart,yend do
-   a = sget(sh1.x+x+x1off,
-    sh1.y+y+y1off)
-   b = sget(sh2.x+x+x2off,
-    sh2.y+y+y2off)
-   if(a!=0 and b!=0) then
-    -- pixel overlap means
-    -- we collided
-    pset(cx+x+x1off,
-      cy+y+y1off,7)
-    colcount += 1
-   elseif(a!=0) then
-    pset(cx+x+x1off,
-      cy+y+y1off,8)
-   elseif(b!=0) then
-    pset(cx+x+x1off,
-      cy+y+y1off,12)
-   else
-    pset(cx+x+x1off,
-      cy+y+y1off,0)
-   end
+  if((r1.x1 > r2.x2) or
+     (r2.x1 > r1.x2) or
+     (r1.y1 > r2.y2) or
+     (r2.y1 > r1.y2)) then
+    return false
   end
- end
- print("(total pixel collisions: "..colcount..")",
-   3,96,5)
- if(colcount > 0) then
   return true
- end
- return false
-end
-
--- return object with x,y pixel
--- coords on sprite sheet of
--- given sprite number
-function shtcoord(sp)
- local sh = {}
- sh.x = (sp%16)*8
- sh.y = flr(sp/16)*8
- return sh
 end
 
 -- ***
@@ -344,15 +232,15 @@ function move_enemy(s)
   end
   
   if(s.dx<s.dxtarget[s.xmove]) then
-      s.dx+=s.a
+    s.dx+=s.a
   elseif(s.dx>s.dxtarget[s.xmove]) then
-      s.dx-=s.a
+    s.dx-=s.a
   end
   
   if(s.dy<s.dytarget[s.ymove]) then
-      s.dy+=s.a
+    s.dy+=s.a
   elseif(s.dy>s.dytarget[s.ymove]) then
-      s.dy-=s.a
+    s.dy-=s.a
   end
 
   s.x+=s.dx  
