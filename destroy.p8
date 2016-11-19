@@ -29,6 +29,7 @@ enemy_types["diamond"]={
   dytarget={0,1}
 }
 
+finished = false
 
 function setup_player()
   local p = {}
@@ -41,6 +42,8 @@ function setup_player()
   p.sp = 1
   p.w  = 8
   p.h  = 7
+  p.dmg= 0
+  p.hp = 5
 
   -- bullets
   p.bullets  = {}
@@ -77,6 +80,21 @@ function move_player()
   if p.x>120 then p.x=120 end
   if p.y<0   then p.y=0 end
   if p.y>120 then p.y=120 end
+
+  -- Did we hit an enemy? Ouch!
+  for a in all(aliens) do
+    if check_hit(a,p)
+    then
+      sfx(0)
+      p.dmg += a.hp
+      a.dmg += p.hp
+    end
+  end
+
+  -- Are we still flying?
+  if p.dmg >= p.hp then
+    player_death()
+  end
 end
 
 function ship_sprite()
@@ -95,6 +113,7 @@ end
 
 function draw_player()
   spr(ship_sprite(),p.x,p.y)
+  --print("HP: "..p.hp.." DMG: "..p.dmg, 3, 8)
  
   --sspr(8,8,16,16,p.x,p.y)
  
@@ -257,6 +276,17 @@ function draw_enemy(s)
   spr(s.sprite, s.x, s.y)
 end
 
+function player_death()
+  -- We'll deal with lives later!
+  game_over()
+end
+
+function game_over()
+  finished  = true
+  aliens    = {}
+  p.bullets = {}
+end
+
 function _update()
   foreach(aliens, move_enemy)
   if(#aliens<3) add(aliens, new_enemy(flr(rnd(80)),5,random_enemy()))
@@ -267,10 +297,15 @@ function _update()
 end
 
 function _draw()
-  cls()
-  foreach(aliens, draw_enemy)
-  foreach(p.bullets,draw_bullet)
-  draw_player()
+  if finished then
+    cls()
+    print("GAME OVER", 45, 50)
+  else
+    cls()
+    foreach(aliens, draw_enemy)
+    foreach(p.bullets,draw_bullet)
+    draw_player()
+  end
 end
 
 __gfx__
