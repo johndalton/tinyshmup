@@ -139,10 +139,21 @@ function fire_player_bullet()
     else
       p.cannon=1
     end
-    local bullet={ x=p.x+boffset,y=p.y-1, dx=0,dy=p.bdy, w=1,h=2,player=true}
+    local bullet={
+      x=p.x+boffset,y=p.y-1,
+      dx=0,dy=p.bdy,w=1,h=2,
+      sp=0,player=true}
     add(bullets,bullet)
     p.bullets+=1
   end
+end
+
+function fire_enemy_bullet(e)
+  local bullet={
+    x=e.x+e.w/2,y=e.y+e.h,
+    dx=0,dy=1,w=3,h=3,
+    sp=16,player=false}
+  add(bullets,bullet)
 end
 
 function remove_bullet(b)
@@ -160,11 +171,21 @@ function move_bullet(b)
   then
     remove_bullet(b)
   else
-    for a in all(aliens) do
-      if check_hit(a,b)
+    if b.player
+    then
+      for a in all(aliens) do
+        if check_hit(a,b)
+        then
+          sfx(1)
+          a.dmg += 1
+          remove_bullet(b)
+        end
+      end
+    else
+      if check_hit(p,b)
       then
         sfx(1)
-        a.dmg += 1
+        p.dmg += 1
         remove_bullet(b)
       end
     end
@@ -172,7 +193,7 @@ function move_bullet(b)
 end
 
 function draw_bullet(b)
-  spr(0,b.x,b.y)
+  spr(b.sp,b.x,b.y)
 end
 
 function check_hit(a, b)
@@ -283,6 +304,12 @@ function move_enemy(s)
   if out_of_bounds(s)
   then
     del(aliens,s)
+  end
+
+  fire_chance=rnd(100)
+  if fire_chance > 95
+  then
+    fire_enemy_bullet(s)
   end
 end
 
