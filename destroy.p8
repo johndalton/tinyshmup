@@ -1,6 +1,8 @@
 pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
+-- tinyshmup
+-- by @johndalton
 
 --******************************
 -- initialization
@@ -18,7 +20,8 @@ enemy_types["saucer"]={
   xmove=0, ymove=0, sprite=8,
   timers={4,20,2},
   dxtarget={3,0,-3,0},
-  dytarget={0,1,-1,0,1}
+  dytarget={0,1,-1,0,1},
+  move=move_with_timers
 }
 enemy_types["diamond"]={
   dx=0, dy=0, a=1, w=7, h=6,
@@ -26,7 +29,8 @@ enemy_types["diamond"]={
   xmove=0, ymove=0, sprite=9,
   timers={4,15,2},
   dxtarget={3,-1,0},
-  dytarget={0,1}
+  dytarget={0,1},
+  move=move_with_timers
 }
 
 -- bullets
@@ -220,6 +224,8 @@ function new_enemy(x,y,n)
   s.x=x
   s.y=y
 
+  s.move=move_with_timers
+
   return s
 end
 
@@ -269,12 +275,7 @@ function _init()
   p=setup_player()
 end
 
-function move_enemy(s)
-  if (s.dmg >= s.hp) then
-    sfx(0)
-    del(aliens,s)
-  end
-  
+function move_with_timers(s)
   if (s.ticks==0) then
     s.ticks=s.timers[s.timer]
     s.timer+=1
@@ -300,6 +301,16 @@ function move_enemy(s)
   s.x+=s.dx  
   s.y+=s.dy
   s.ticks-=1
+end
+
+function move_enemy(s)
+  if (s.dmg >= s.hp) then
+    sfx(0)
+    del(aliens,s)
+    return -1
+  end
+  
+  s.move(s)
 
   if out_of_bounds(s)
   then
