@@ -106,17 +106,13 @@ end
 
 function draw_smoke(s)
   pal(15,smoke_colour[s.colour])
-  spr(s.sprite,s.x,s.y)
-
-  -- for comparison
   -- random sprite by age
   ss=s.sprite+flr(rnd(2))*16
-  spr(ss,s.x-20,s.y)
+  spr(ss,s.x,s.y)
 
   -- for comparison
-  -- random sprite by age
-  ss=s.sprite+flr(rnd(3))*16
-  spr(ss,s.x-40,s.y)
+  -- static sprite by age
+  spr(s.sprite,s.x-30,s.y)
 
   -- for comparison
   circfill(s.x-60,s.y,2,smoke_colour[s.colour])
@@ -134,6 +130,7 @@ function _draw()
   end
   foreach(sparks, draw_spark)
   print("smoke: "..#smoke,3,8,7)
+  print("sparks: "..#sparks,3,16,7)
 end
 
 
