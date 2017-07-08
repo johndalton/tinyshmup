@@ -2,7 +2,7 @@ pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
 o={}
-smoke_colour={10,9,8,4,5,6}
+smoke_colour={10,9,6,5,12}
 
 function _init()
   o.x=63
@@ -23,7 +23,9 @@ function make_smoke(p)
   s.dy=rnd(2)*-1
   
   s.age=1
-  s.colour=smoke_colour[1]
+  s.change=2
+  s.sprite=16
+  s.colour=1
 
   return s
 end
@@ -31,13 +33,15 @@ end
 function update_smoke(s)
   s.age+=1
   
-  if s.age > 25
+  if s.age > 32
   then
     del(o.smoke, s)
   else
-    if s.age%5==0
+    if s.age>s.change
     then
-      s.colour=smoke_colour[s.age/5+1]
+      s.sprite+=1
+      s.colour+=1
+      s.change*=s.change
     end
   end
   
@@ -52,20 +56,18 @@ function _update()
 
   foreach(o.smoke, update_smoke)
 
-  if #o.smoke<15 and rnd(10)>1
+  if #o.smoke<15 and rnd(5)>3
   then
     add(o.smoke, make_smoke(o))
   end
 end
 
 function draw_smoke(s)
-  -- pick a random smoke sprite
-  ss=15+s.age%5
-  pal(15,s.colour)
-  spr(ss,s.x,s.y)
+  pal(15,smoke_colour[s.colour])
+  spr(s.sprite,s.x,s.y)
   
   -- for comparison
-  circfill(s.x-20,s.y,2,s.colour)
+  circfill(s.x-20,s.y,2,smoke_colour[s.colour])
 end
 
 function _draw()
