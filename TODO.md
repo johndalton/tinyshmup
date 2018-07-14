@@ -11,6 +11,7 @@ Add a system for animating sprites. It should:
 * Automatically advance the frame based on a global timer, and per-sprite animation speed.
 * Allow a single sprite to have multiple "sets" of frames. For example, a different set of frames depending on move or damage state.
 * Support palette swapping
+  * We already use this for smoke effects, but should use it to easily distinguish enemy variants.
 
 ### Particles
 
@@ -24,7 +25,9 @@ Bada Boom. Bada BIG Boom.
 
 ### Score
 
-We need to keep score!
+~~We need to keep score!~~
+
+We keep score now! Obviously it will need tuning, but for now enemies have different point values which are scored when the enemy is destroyed.
 
 ### Pickups
 
