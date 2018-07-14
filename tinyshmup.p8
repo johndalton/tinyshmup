@@ -332,9 +332,16 @@ function move_enemy(s)
   end
 
   fire_chance=rnd(100)
+  aim_chance=rnd(100)
   if fire_chance > 95
   then
-    fire_enemy_bullet(s)
+    fire_enemy_bullet(s,p)
+    if aim_chance > 50
+    then
+      fire_enemy_bullet(s,player)
+    else
+      fire_enemy_bullet(s)
+    end
   end
 end
 
@@ -352,11 +359,17 @@ smoke={}
 smoke_colour={8,10,6,6,5,12}
 sparks={}
 
-function fire_enemy_bullet(e)
+function fire_enemy_bullet(e, t)
   local bullet={
     x=e.x+e.w/2,y=e.y+e.h,
     dx=0,dy=1,w=3,h=3,
     sp=48,player=false}
+  if t
+  then
+    local angle=atan2(t.x - e.x, t.y - e.y)
+    bullet.dx=2*cos(angle)
+    bullet.dy=2*sin(angle)
+  end
   add(bullets,bullet)
 end
 

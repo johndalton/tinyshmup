@@ -38,7 +38,8 @@ We absolutely need boss battles. Later.
 
 ### Ballistic
 
-* Enemies need to be able to aim weapons at you, not just shoot straight down.
+* ~~Enemies need to be able to aim weapons at you, not just shoot straight down.~~
+	* Revised some basic trig using http://www.helixsoft.nl/articles/circle/sincos.htm as a reference!   
 * Player powerups should include things like spread shots.
 
 ### Guided
