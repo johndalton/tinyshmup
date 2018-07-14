@@ -1,5 +1,5 @@
 pico-8 cartridge // http://www.pico-8.com
-version 8
+version 11
 __lua__
 -- tinyshmup
 -- by @johndalton
@@ -8,38 +8,115 @@ __lua__
 -- initialization
 --******************************
 
+finished = false
+
+function _init()
+  add(aliens, new_enemy(5,5,"saucer"))
+  p=setup_player()
+end
+
+function _update()
+  foreach(aliens, move_enemy)
+  if(#aliens<3) then add(aliens, new_enemy(flr(rnd(80)),5,random_enemy())) end
+
+  foreach(bullets,move_bullet)
+  foreach(smoke, update_smoke)
+  foreach(sparks, update_spark)
+
+  move_player()
+end
+
+function _draw()
+  if finished then
+    cls()
+    print("game over", 45, 50)
+  else
+    cls()
+    foreach(aliens, draw_enemy)
+    foreach(bullets,draw_bullet)
+    foreach(sparks, draw_spark)
+    -- do smoke in reverse order for best effect.
+    for i = #smoke,1,-1 do
+      draw_smoke(smoke[i])
+    end
+
+    draw_player()
+    draw_ui()
+  end
+end
+
+function player_death()
+  -- we'll deal with lives later!
+  game_over()
+end
+
+function game_over()
+  finished  = true
+  aliens    = {}
+  bullets = {}
+end
+
+function draw_ui()
+  -- health bar
+  print("‡",0,2,8)
+  rectfill(7,2,p.hp*8,6,5)  
+  rectfill(7,2,(p.hp-p.dmg)*8,6,8)
+end
+
+-- ***
+-- *** collision detection
+-- *** from: http://www.lexaloffle.com/bbs/?tid=2179
+-- *** pixel-perfect collision detection by joshmillard
+-- ***
+-- *** n.b. only using box collison for now, will revisit
+-- *** pixel-perfect collisions if necessary.
+
+-- return a rectangle structure
+-- based on a sprite, with
+-- start and end x/y screen
+-- coordinates
+function to_rect(sp)
+  local r = {}
+  r.x1 = sp.x
+  r.y1 = sp.y
+  r.x2 = sp.x + sp.w - 1
+  r.y2 = sp.y + sp.h - 1
+  return r
+end
+
+-- simple box collision:
+-- takes rectangle coords for
+-- two sprites.
+-- return true if bounding
+-- rectangles overlap, false
+-- otherwise
+function collide_rect(r1,r2)
+  if((r1.x1 > r2.x2) or
+     (r2.x1 > r1.x2) or
+     (r1.y1 > r2.y2) or
+     (r2.y1 > r1.y2)) then
+    return false
+  end
+  return true
+end
+
+-- ***
+-- *** end collision detection
+-- ***
+
+function out_of_bounds(o)
+  -- return (o.x>127 or o.x<0 or o.y>127 or o.y<0)
+  if (o.x>127 or o.x<0 or o.y>127 or o.y<0)
+  then
+    return true
+  else
+    return false
+  end
+end
+
+-->8
 -- the player
 p={}
-
--- aliens
-aliens={}
-enemy_types={}
-enemy_types["saucer"]={
-  dx=0, dy=0, a=1, w=8, h=4,
-  hp=2, dmg=0, timer=1, ticks=0,
-  xmove=0, ymove=0, sprite=8,
-  timers={4,20,2},
-  dxtarget={3,0,-3,0},
-  dytarget={0,1,-1,0,1},
-  move=move_with_timers
-}
-enemy_types["diamond"]={
-  dx=0, dy=0, a=1, w=7, h=6,
-  hp=2, dmg=0, timer=1, ticks=0,
-  xmove=0, ymove=0, sprite=9,
-  timers={4,15,2},
-  dxtarget={3,-1,0},
-  dytarget={0,1},
-  move=move_with_timers
-}
-
--- bullets
-bullets={}
-smoke={}
-smoke_colour={8,10,6,6,5,12}
-sparks={}
-
-finished = false
 
 function setup_player()
   local p = {}
@@ -101,6 +178,11 @@ function move_player()
     end
   end
 
+  -- Are we on fire?
+  if rnd(p.hp*2) < p.dmg then
+    add(smoke, make_smoke({x=p.x+rnd(7), y=p.y+6}))
+  end
+  
   -- are we still flying?
   if p.dmg >= p.hp then
     player_death()
@@ -154,6 +236,121 @@ function fire_player_bullet()
     p.bullets+=1
   end
 end
+
+-->8
+-- aliens
+aliens={}
+enemy_types={}
+enemy_types["saucer"]={
+  dx=0, dy=0, a=1, w=8, h=4,
+  hp=2, dmg=0, timer=1, ticks=0,
+  xmove=0, ymove=0, sprite=8,
+  timers={4,20,2},
+  dxtarget={3,0,-3,0},
+  dytarget={0,1,-1,0,1},
+  move=move_with_timers
+}
+enemy_types["diamond"]={
+  dx=0, dy=0, a=1, w=7, h=6,
+  hp=2, dmg=0, timer=1, ticks=0,
+  xmove=0, ymove=0, sprite=9,
+  timers={4,15,2},
+  dxtarget={3,-1,0},
+  dytarget={0,1},
+  move=move_with_timers
+}
+
+function random_enemy()
+  choice=rnd(2)
+  print(choice,0,8,1)
+  if choice > 1
+  then
+    return "saucer"
+  else
+    return "diamond"
+  end
+end
+
+function new_enemy(x,y,n)
+  -- spawn enemy type n at x,y
+  local s={}
+  for k,v in pairs(enemy_types[n]) do
+    s[k]=v
+  end
+  s.x=x
+  s.y=y
+
+  s.move=move_with_timers
+
+  return s
+end
+
+function move_with_timers(s)
+  if (s.ticks==0) then
+    s.ticks=s.timers[s.timer]
+    s.timer+=1
+    if(s.timer > #s.timers) then s.timer=1 end
+    s.xmove+=1
+    if(s.xmove > #s.dxtarget) then s.xmove=1 end
+    s.ymove+=1
+    if(s.ymove > #s.dytarget) then s.ymove=1 end
+  end
+  
+  if(s.dx<s.dxtarget[s.xmove]) then
+    s.dx+=s.a
+  elseif(s.dx>s.dxtarget[s.xmove]) then
+    s.dx-=s.a
+  end
+  
+  if(s.dy<s.dytarget[s.ymove]) then
+    s.dy+=s.a
+  elseif(s.dy>s.dytarget[s.ymove]) then
+    s.dy-=s.a
+  end
+
+  s.x+=s.dx  
+  s.y+=s.dy
+  s.ticks-=1
+end
+
+function move_enemy(s)
+  if (s.dmg >= s.hp) then
+    sfx(0)
+    del(aliens,s)
+    return -1
+  end
+
+  if rnd(s.hp*2) < s.dmg then
+    add(smoke, make_smoke(s))
+  end
+  
+  s.move(s)
+
+  if out_of_bounds(s)
+  then
+    del(aliens,s)
+  end
+
+  fire_chance=rnd(100)
+  if fire_chance > 95
+  then
+    fire_enemy_bullet(s)
+  end
+end
+
+function draw_enemy(s)
+  --print("ticks:"..s.ticks,2,2)
+  --print("dx:"..s.dx,s.x-10,s.y-4)
+  --print("dy:"..s.dy,s.x+10,s.y-4)
+  spr(s.sprite, s.x, s.y)
+end
+
+-->8
+-- bullets
+bullets={}
+smoke={}
+smoke_colour={8,10,6,6,5,12}
+sparks={}
 
 function fire_enemy_bullet(e)
   local bullet={
@@ -286,196 +483,15 @@ function update_smoke(s)
   s.y+=s.dy
 end
 
-function random_enemy()
-  choice=rnd(2)
-  print(choice,0,8,1)
-  if choice > 1
-  then
-    return "saucer"
-  else
-    return "diamond"
-  end
-end
-
-function new_enemy(x,y,n)
-  -- spawn enemy type n at x,y
-  local s={}
-  for k,v in pairs(enemy_types[n]) do
-    s[k]=v
-  end
-  s.x=x
-  s.y=y
-
-  s.move=move_with_timers
-
-  return s
-end
-
--- ***
--- *** collision detection
--- *** from: http://www.lexaloffle.com/bbs/?tid=2179
--- *** pixel-perfect collision detection by joshmillard
--- ***
--- *** n.b. only using box collison for now, will revisit
--- *** pixel-perfect collisions if necessary.
-
--- return a rectangle structure
--- based on a sprite, with
--- start and end x/y screen
--- coordinates
-function to_rect(sp)
-  local r = {}
-  r.x1 = sp.x
-  r.y1 = sp.y
-  r.x2 = sp.x + sp.w - 1
-  r.y2 = sp.y + sp.h - 1
-  return r
-end
-
--- simple box collision:
--- takes rectangle coords for
--- two sprites.
--- return true if bounding
--- rectangles overlap, false
--- otherwise
-function collide_rect(r1,r2)
-  if((r1.x1 > r2.x2) or
-     (r2.x1 > r1.x2) or
-     (r1.y1 > r2.y2) or
-     (r2.y1 > r1.y2)) then
-    return false
-  end
-  return true
-end
-
--- ***
--- *** end collision detection
--- ***
-
-function _init()
-  add(aliens, new_enemy(5,5,"saucer"))
-  p=setup_player()
-end
-
-function move_with_timers(s)
-  if (s.ticks==0) then
-    s.ticks=s.timers[s.timer]
-    s.timer+=1
-    if(s.timer > #s.timers) then s.timer=1 end
-    s.xmove+=1
-    if(s.xmove > #s.dxtarget) then s.xmove=1 end
-    s.ymove+=1
-    if(s.ymove > #s.dytarget) then s.ymove=1 end
-  end
-  
-  if(s.dx<s.dxtarget[s.xmove]) then
-    s.dx+=s.a
-  elseif(s.dx>s.dxtarget[s.xmove]) then
-    s.dx-=s.a
-  end
-  
-  if(s.dy<s.dytarget[s.ymove]) then
-    s.dy+=s.a
-  elseif(s.dy>s.dytarget[s.ymove]) then
-    s.dy-=s.a
-  end
-
-  s.x+=s.dx  
-  s.y+=s.dy
-  s.ticks-=1
-end
-
-function move_enemy(s)
-  if (s.dmg >= s.hp) then
-    sfx(0)
-    del(aliens,s)
-    return -1
-  end
-
-  if rnd(s.hp*2) < s.dmg then
-    add(smoke, make_smoke(s))
-  end
-  
-  s.move(s)
-
-  if out_of_bounds(s)
-  then
-    del(aliens,s)
-  end
-
-  fire_chance=rnd(100)
-  if fire_chance > 95
-  then
-    fire_enemy_bullet(s)
-  end
-end
-
-function out_of_bounds(o)
-  -- return (o.x>127 or o.x<0 or o.y>127 or o.y<0)
-  if (o.x>127 or o.x<0 or o.y>127 or o.y<0)
-  then
-    return true
-  else
-    return false
-  end
-end
-
-function draw_enemy(s)
-  --print("ticks:"..s.ticks,2,2)
-  --print("dx:"..s.dx,s.x-10,s.y-4)
-  --print("dy:"..s.dy,s.x+10,s.y-4)
-  spr(s.sprite, s.x, s.y)
-end
-
-function player_death()
-  -- we'll deal with lives later!
-  game_over()
-end
-
-function game_over()
-  finished  = true
-  aliens    = {}
-  bullets = {}
-end
-
-function _update()
-  foreach(aliens, move_enemy)
-  if(#aliens<3) then add(aliens, new_enemy(flr(rnd(80)),5,random_enemy())) end
-
-  foreach(bullets,move_bullet)
-  foreach(smoke, update_smoke)
-  foreach(sparks, update_spark)
-
-  move_player()
-end
-
 function draw_smoke(s)
   pal(15,smoke_colour[s.colour])
   -- random sprite by age
-  ss=s.sprite+flr(rnd(2))*16
+  ss=s.sprite+flr(rnd(1))*16
   spr(ss,s.x,s.y)
 end
 
 function draw_spark(s)
   pset(s.x,s.y,smoke_colour[s.colour])
-end
-
-function _draw()
-  if finished then
-    cls()
-    print("game over", 45, 50)
-  else
-    cls()
-    foreach(aliens, draw_enemy)
-    foreach(bullets,draw_bullet)
-    foreach(sparks, draw_spark)
-    -- do smoke in reverse order for best effect.
-    for i = #smoke,1,-1 do
-      draw_smoke(smoke[i])
-    end
-
-    draw_player()
-  end
 end
 
 __gfx__
