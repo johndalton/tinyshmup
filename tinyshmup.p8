@@ -120,8 +120,10 @@ end
 
 function draw_health(x, y)
   print("♥",x,y,8)
-  rectfill(x+7,y,x+p.hp*8,y+4,5)  
-  rectfill(x+7,y,x+(p.hp-p.dmg)*8,y+4,8)
+  rectfill(x+7,y,x+7+p.hp*8,y+4,5)
+  if (p.hp-p.dmg) > 0 then
+    rectfill(x+7,y,x+7+(p.hp-p.dmg)*8,y+4,8)
+  end
 end
 
 -->8
