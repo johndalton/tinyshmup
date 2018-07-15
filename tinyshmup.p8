@@ -4,9 +4,11 @@ __lua__
 -- tinyshmup
 -- by @johndalton
 
---******************************
+-- Find dev notes and more on github at:
+-- https://github.com/johndalton/tinyshmup
+
+-->8
 -- initialization
---******************************
 
 finished = false
 
@@ -122,19 +124,17 @@ function draw_health(x, y)
   rectfill(x+7,y,x+(p.hp-p.dmg)*8,y+4,8)
 end
 
--- ***
--- *** collision detection
+-->8
+-- collision detection
 -- *** from: http://www.lexaloffle.com/bbs/?tid=2179
 -- *** pixel-perfect collision detection by joshmillard
 -- ***
 -- *** n.b. only using box collison for now, will revisit
 -- *** pixel-perfect collisions if necessary.
 
--- return a rectangle structure
--- based on a sprite, with
--- start and end x/y screen
--- coordinates
 function to_rect(sp)
+  -- return a rectangle structure based on a sprite, with
+  -- start and end x/y screen coordinates
   local r = {}
   r.x1 = sp.x
   r.y1 = sp.y
@@ -143,13 +143,11 @@ function to_rect(sp)
   return r
 end
 
--- simple box collision:
--- takes rectangle coords for
--- two sprites.
--- return true if bounding
--- rectangles overlap, false
--- otherwise
 function collide_rect(r1,r2)
+  -- simple box collision: takes rectangle coords for
+  -- two sprites.
+  -- return true if bounding rectangles overlap, false
+  -- otherwise
   if((r1.x1 > r2.x2) or
      (r2.x1 > r1.x2) or
      (r1.y1 > r2.y2) or
@@ -159,9 +157,9 @@ function collide_rect(r1,r2)
   return true
 end
 
--- ***
--- *** end collision detection
--- ***
+function check_hit(a, b)
+  return collide_rect(to_rect(a), to_rect(b)) 
+end
 
 function out_of_bounds(o)
   -- return (o.x>127 or o.x<0 or o.y>127 or o.y<0)
@@ -481,10 +479,6 @@ end
 
 function draw_bullet(b)
   spr(b.sp,b.x,b.y)
-end
-
-function check_hit(a, b)
-  return collide_rect(to_rect(a), to_rect(b)) 
 end
 
 function make_spark(p)
