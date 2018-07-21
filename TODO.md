@@ -67,5 +67,38 @@ The enemy movement system needs a complete overhaul. I wanted simple defined beh
 * Changing state will change the move behaviour for an enemy.
 * Changing state may require some logic (trigger based on health, time, proximity, target selection, etc)
 
+### Thinking out loud…
+
+An object is either moving or not, so everything should have a boolean is_moving state.
+
+Some movement functions we'd like to have:
+
+* move_to(x, y, frames)
+* move_towards(target) # frames?
+* move_straight(frames) # maintain course
+* move_straight_forever()
+* move_nowhere(frames) # maybe hover()?
+
+## Timers
+
+We need a general solution for timers. These could be used for many things:
+
+* spawning groups/waves of enemies
+* predictable shot firing (either time between shots, or firing bursts)
+* explosive timers (mines, missiles that explode after some time limit)
+* limited homing (missiles/torpedos that go ballistic after a while)
+* recharge timers (for special attacks, shields, etc)
+* "bonus" enemies (that either flee or get stronger after some timeout)
+
+To generalise this we should have one bit of code which is responsible for tracking timers and triggering effects. This will hopefully make it easier to compose complex actions from smaller pieces.
+
+
+```
+new_timer(frames, caller, callback)
+  -- Register timer which calls callback(caller) after frames
+
+check_timer(t)
+  -- decrement timer and call if it's time.
+```
 
 

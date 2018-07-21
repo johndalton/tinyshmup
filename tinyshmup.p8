@@ -30,14 +30,20 @@ function _update60()
 end
 
 function update_title()
+  foreach(timers, check_timer)
+
   if btn(4) then
     play_game()
   end
 end
 
 function update_game()
+  foreach(timers, check_timer)
+
   foreach(aliens, move_enemy)
-  if(#aliens<3) then add(aliens, new_enemy(flr(rnd(80)),5,random_enemy())) end
+  if(#aliens<3) then
+    add(aliens, new_enemy(flr(rnd(80)),5,random_enemy()))
+  end
 
   foreach(bullets,move_bullet)
   foreach(smoke, update_smoke)
@@ -47,11 +53,7 @@ function update_game()
 end
 
 function update_gameover()
-  if restarttimer == 0 then
-    gamestate = 0
-  else
-    restarttimer -= 1
-  end
+  foreach(timers, check_timer)
 end
 
 function _draw()
@@ -101,15 +103,22 @@ end
 function play_game()
   gamestate = 1
   score = 0
+  aliens  = {}
+  bullets = {}
+  timers  = {}
+  smoke   = {}
+  sparks  = {}
   add(aliens, new_enemy(5,5,"saucer"))
   p=setup_player()
 end
 
 function game_over()
   gamestate = 2
-  restarttimer = 150
-  aliens    = {}
-  bullets = {}
+  new_timer(300, nil, restart_game)
+end
+
+function restart_game()
+  gamestate = 0
 end
 
 function draw_ui()
@@ -565,6 +574,28 @@ end
 
 function draw_spark(s)
   pset(s.x,s.y,smoke_colour[s.colour])
+end
+
+-->8
+-- timers
+
+function new_timer(frames, caller, callback)
+  t = {t=frames, o=caller, f=callback}
+  add(timers, t)
+end
+
+function check_timer(t)
+  t.t -= 1
+
+  if t.t == 0 then
+    if t.o == nil then
+      t.f()
+    else
+      t.f(t.o)
+    end
+
+    del(timers, t)
+  end
 end
 
 __gfx__
