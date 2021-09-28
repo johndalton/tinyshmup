@@ -73,11 +73,17 @@ An object is either moving or not, so everything should have a boolean is_moving
 
 Some movement functions we'd like to have:
 
-* move_to(x, y, frames)
-* move_towards(target) # frames?
-* move_straight(frames) # maintain course
-* move_straight_forever()
-* move_nowhere(frames) # maybe hover()?
+* move_to(x, y, speed)
+* move_straight_towards(target, speed)
+* move_turn_towards(target, speed, rate_of_turn)
+* move_straight_ahead(speed) # maintain course
+  * This suggests that objects know their current direction and speed
+* move_nowhere() # maybe hover()?
+  * How is this different from is_moving = false?
+  * …or move_straight_ahead with a speed of zero?
+  * Really we just want this for simplification, I think; it's an implementation detail to minimise leakage about movement states into other parts of the code. Everything has a movement function, even if that function is a noop.
+
+
 
 ## Timers
 
