@@ -7,67 +7,148 @@ __lua__
 -->8
 
 function _init()
-    speed=2
-    angle=(flr(rnd(10))-5)/100
-    direction=angle
-    x=64
-    y=64
-    ticks=0
+    enemies={}
+    add(enemies, make_enemy())
+    add(enemies, make_enemy())
+    add(enemies, make_enemy())
+
+    player=make_player()
 end    
 
+function make_enemy()
+    e={}
+    e.speed=2
+    e.angle=(flr(rnd(10))-5)/100
+    e.direction=e.angle
+    e.x=64
+    e.y=64
+    e.ticks=0
+
+    return e
+end
+
+function update_enemy(e)
+    e.ticks+=1
+    if e.ticks>90 then
+        e.ticks=0
+    end
+
+    e.direction+=e.angle
+    if e.direction > 1 then
+        e.direction = 0
+    end
+    if e.direction < 0 then
+        e.direction = 1
+    end
+
+
+    if e.ticks % 30 == 0 then
+        e.angle=(flr(rnd(30))-15)/100
+    end
+
+    e.dx=e.speed*cos(e.direction)
+    e.dy=e.speed*sin(e.direction)
+
+    e.x+=e.dx
+    if e.x>127 then
+        e.x=0
+    end
+    if e.x<0 then
+        e.x=127
+    end
+
+    e.y+=e.dy
+    if e.y>127 then
+        e.y=0
+    end
+    if e.y<0 then
+        e.y=127
+    end
+end
+
+function make_player()
+    p={}
+    p.speed=2
+    p.turnrate=0.05
+    p.direction=0
+    p.x=64
+    p.y=64
+    p.ticks=0
+
+    return p
+end
+
+function update_player(p)
+    if btn(0) then p.direction+=p.turnrate end
+    if btn(1) then p.direction-=p.turnrate end
+    if btn(2) then p.speed+=1 end
+    if btn(3) then p.speed-=1 end
+  
+    p.ticks+=1
+    if p.ticks>90 then
+        p.ticks=0
+    end
+
+    if p.direction > 1 then
+        p.direction = 0
+    end
+    if p.direction < 0 then
+        p.direction = 1
+    end
+
+    p.dx=p.speed*cos(p.direction)
+    p.dy=p.speed*sin(p.direction)
+
+    p.x+=p.dx
+    if p.x>127 then
+        p.x=0
+    end
+    if p.x<0 then
+        p.x=127
+    end
+
+    p.y+=p.dy
+    if p.y>127 then
+        p.y=0
+    end
+    if p.y<0 then
+        p.y=127
+    end
+end
+
 function _update()
-    ticks+=1
-    if ticks>90 then
-        ticks=0
-    end
+    foreach(enemies, update_enemy)
+    update_player(player)
+end
 
-    direction+=angle
-    if direction > 1 then
-        direction = 0
-    end
-    if direction < 0 then
-        direction = 1
-    end
+function draw_enemy(e)
+    spr(8,e.x,e.y)    
+end
+
+function draw_player(p)
+    spr(9,p.x,p.y)    
+end
 
 
-    if ticks % 30 == 0 then
-        angle=(flr(rnd(30))-15)/100
-    end
-
-    dx=speed*cos(direction)
-    dy=speed*sin(direction)
-
-    x+=dx
-    if x>127 then
-        x=0
-    end
-    if x<0 then
-        x=127
-    end
-
-    y+=dy
-    if y>127 then
-        y=0
-    end
-    if y<0 then
-        y=127
-    end
+function print_details(e)
+    print("enemies:",0,50,8)
+    print(#enemies,32,50,8)
+    
+    print("speed:",0,0,8)
+    print(e.speed,24,0,8)
+    print("dir:",0,7,8)
+    print(e.direction,24,7,8)
+    print("dx:",0,14,8)
+    print(e.dx,24,14,8)
+    print("dy:",0,21,8)
+    print(e.dy,24,21,8)
 end
 
 function _draw()
     cls()
-    print("angle:",0,0,8)
-    print(angle,24,0,8)
-    print("dir:",0,7,8)
-    print(direction,24,7,8)
-    print("dx:",0,14,8)
-    print(dx,24,14,8)
-    print("dy:",0,21,8)
-    print(dy,24,21,8)
-
-
-
-    spr(8,x,y)    
+    print_details(player)
+    foreach(enemies, draw_enemy)
+    draw_player(player)
 end
 
 __gfx__
