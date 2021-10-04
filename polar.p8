@@ -17,7 +17,7 @@ end
 
 function make_enemy()
     e={}
-    e.speed=2
+    e.speed=1.3
     e.angle=(flr(rnd(10))-5)/100
     e.direction=e.angle
     e.x=64
@@ -69,7 +69,7 @@ end
 function make_player()
     p={}
     p.speed=2
-    p.turnrate=0.05
+    p.turnrate=0.02
     p.direction=0
     p.x=64
     p.y=64
@@ -81,8 +81,8 @@ end
 function update_player(p)
     if btn(0) then p.direction+=p.turnrate end
     if btn(1) then p.direction-=p.turnrate end
-    if btn(2) then p.speed+=1 end
-    if btn(3) then p.speed-=1 end
+    if btn(2) then p.speed+=0.1 end
+    if btn(3) then p.speed-=0.1 end
   
     p.ticks+=1
     if p.ticks>90 then
