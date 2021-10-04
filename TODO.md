@@ -75,7 +75,7 @@ Some movement functions we'd like to have:
 
 * move_to(x, y, speed)
 * move_straight_towards(target, speed)
-* move_turn_towards(target, speed, rate_of_turn)
+* move_turning_towards(target, speed, rate_of_turn)
 * move_straight_ahead(speed) # maintain course
   * This suggests that objects know their current direction and speed
 * move_nowhere() # maybe hover()?
