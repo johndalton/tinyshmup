@@ -71,18 +71,28 @@ The enemy movement system needs a complete overhaul. I wanted simple defined beh
 
 An object is either moving or not, so everything should have a boolean is_moving state.
 
+An object can be given a movement command which might complete when some condition is met; in that case movement would stop, which will trigger a state change.
+
 Some movement functions we'd like to have:
 
-* move_to(x, y, speed)
-* move_straight_towards(target, speed)
-* move_turning_towards(target, speed, rate_of_turn)
-* move_straight_ahead(speed) # maintain course
-  * This suggests that objects know their current direction and speed
-* move_nowhere() # maybe hover()?
+* `move_to(x, y)`
+* `move_straight_towards(target)`
+  * recalculate destination each frame, and always take the shortest path
+* `move_turning_towards(target, rate_of_turn)`
+  * recalculate destination each frame, but assume a fixed rate of turn
+* `move_straight_ahead()`
+  * Maintain course. This suggests that objects know their current direction and speed
+* `move_nowhere()`
   * How is this different from is_moving = false?
   * …or move_straight_ahead with a speed of zero?
   * Really we just want this for simplification, I think; it's an implementation detail to minimise leakage about movement states into other parts of the code. Everything has a movement function, even if that function is a noop.
+  * This could have an optional counter, but I think it's best to keep that separate (in timers)
 
+I keep changing my mind about whether movement functions should know anything about movement speed.
+
+* An object already has a speed, so specifying it is redundant unless it's changing.
+* However, you might want to set the speed when you give a movement command. Should this be part of the command?
+* What about acceleration? (turning is acceleration but I'm talking about changing speed over timerather than direction)
 
 
 ## Timers
