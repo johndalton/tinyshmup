@@ -18,10 +18,11 @@ end
 function make_enemy()
     e={}
     e.speed=1.3
-    e.angle=(flr(rnd(10))-5)/100
-    e.direction=e.angle
-    e.x=64
-    e.y=64
+    -- e.angle=(flr(rnd(10))-5)/100
+    e.direction=rnd(1)
+    e.turnrate=0.03
+    e.x=rnd(127)
+    e.y=rnd(127)
     e.ticks=0
 
     return e
@@ -33,21 +34,15 @@ function update_enemy(e)
         e.ticks=0
     end
 
-    e.direction+=e.angle
-    if e.direction > 1 then
-        e.direction = 0
-    end
-    if e.direction < 0 then
-        e.direction = 1
-    end
-
-
-    if e.ticks % 30 == 0 then
-        e.angle=(flr(rnd(30))-15)/100
+    if e.ticks % 10 == 0 then
+        if rnd(99) > 5 then
+           e.direction=rnd(1)
+        end
     end
 
     e.dx=e.speed*cos(e.direction)
     e.dy=e.speed*sin(e.direction)
+    turn_towards_target(e, player)
 
     e.x+=e.dx
     if e.x>127 then
@@ -66,11 +61,20 @@ function update_enemy(e)
     end
 end
 
+function turn_towards_target(s, t)
+    t_direction=atan2(t.x-s.x,t.y-s.y)
+    if t_direction > s.direction then
+        s.direction+=s.turnrate
+    else
+        s.direction-=s.turnrate
+    end
+end
+
 function make_player()
     p={}
-    p.speed=2
+    p.speed=0.2
     p.turnrate=0.02
-    p.direction=0
+    p.direction=rnd(1)
     p.x=64
     p.y=64
     p.ticks=0
