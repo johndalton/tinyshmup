@@ -17,13 +17,14 @@ end
 
 function make_enemy()
     e={}
+    e.ispolar=true
     e.speed=1.3
     -- e.angle=(flr(rnd(10))-5)/100
     e.direction=rnd(1)
-    e.turnrate=0.03
+    e.turnrate=rnd(3)/100
     e.x=rnd(127)
     e.y=rnd(127)
-    e.ticks=0
+    e.ticks=rnd(30)
 
     return e
 end
@@ -34,17 +35,14 @@ function update_enemy(e)
         e.ticks=0
     end
 
-    if e.ticks % 10 == 0 then
+    if e.ticks % 30 == 0 then
         if rnd(99) > 5 then
            e.direction=rnd(1)
         end
     end
 
-    e.dx=e.speed*cos(e.direction)
-    e.dy=e.speed*sin(e.direction)
-    turn_towards_target(e, player)
+    move_turning_target(e, player)
 
-    e.x+=e.dx
     if e.x>127 then
         e.x=0
     end
@@ -52,7 +50,6 @@ function update_enemy(e)
         e.x=127
     end
 
-    e.y+=e.dy
     if e.y>127 then
         e.y=0
     end
@@ -61,20 +58,65 @@ function update_enemy(e)
     end
 end
 
-function turn_towards_target(s, t)
-    t_direction=atan2(t.x-s.x,t.y-s.y)
-    if t_direction > s.direction then
+-->8
+-- movement
+
+function update_position(s)
+    if s.ispolar == true then
+        s.dx=s.speed*cos(s.direction)
+        s.dy=s.speed*sin(s.direction)
+    end
+
+    s.x+=s.dx
+    s.y+=s.dy
+    -- out of bounds check handled elsewhere
+end
+
+function move_to_pos(s, x, y)
+    -- FIXME handle non-polar movement
+    s.direction=atan2(x-s.x,y-s.y)
+    update_position(s)
+end
+
+function move_to_target(s, t)
+    move_to_pos(s, t.x, t.y)
+end
+
+function move_turning_pos(s, x ,y)
+    t_direction=atan2(x-s.x,y-s.y)
+    if t_direction > s.direction + s.turnrate then
         s.direction+=s.turnrate
-    else
+    elseif t_direction < s.direction - s.turnrate then
         s.direction-=s.turnrate
     end
+
+    update_position(s)
 end
+
+function move_turning_target(s, t)
+    move_turning_pos(s, t.x, t.y)
+end
+
+function move_straight_ahead(s)
+    -- no change to direction or speed
+    update_position(s)
+end
+
+function move_nowhere(s)
+    -- no change to position
+end
+
+
 
 function make_player()
     p={}
-    p.speed=0.2
-    p.turnrate=0.02
-    p.direction=rnd(1)
+    p.ispolar=false
+    p.dx=0
+    p.dy=0
+    p.a=1
+--    p.speed=0.2
+--    p.turnrate=0.02
+--    p.direction=rnd(1)
     p.x=64
     p.y=64
     p.ticks=0
@@ -83,41 +125,41 @@ function make_player()
 end
 
 function update_player(p)
-    if btn(0) then p.direction+=p.turnrate end
-    if btn(1) then p.direction-=p.turnrate end
-    if btn(2) then p.speed+=0.1 end
-    if btn(3) then p.speed-=0.1 end
+--    if btn(0) then p.direction+=p.turnrate end
+--    if btn(1) then p.direction-=p.turnrate end
+--    if btn(2) then p.speed+=0.1 end
+--    if btn(3) then p.speed-=0.1 end
   
     p.ticks+=1
     if p.ticks>90 then
         p.ticks=0
     end
 
-    if p.direction > 1 then
-        p.direction = 0
-    end
-    if p.direction < 0 then
-        p.direction = 1
-    end
+--    if p.direction > 1 then
+--        p.direction = 0
+--    end
+--    if p.direction < 0 then
+--        p.direction = 1
+--    end
 
-    p.dx=p.speed*cos(p.direction)
-    p.dy=p.speed*sin(p.direction)
+--  p.dx=p.speed*cos(p.direction)
+--  p.dy=p.speed*sin(p.direction)
 
-    p.x+=p.dx
-    if p.x>127 then
-        p.x=0
-    end
-    if p.x<0 then
-        p.x=127
-    end
+    p.dx=0
+    p.dy=0
 
-    p.y+=p.dy
-    if p.y>127 then
-        p.y=0
-    end
-    if p.y<0 then
-        p.y=127
-    end
+    if btn(0) then p.dx = p.a*-1 end
+    if btn(1) then p.dx = p.a end
+    if btn(2) then p.dy = p.a*-1 end
+    if btn(3) then p.dy = p.a end
+
+    p.x += p.dx
+    p.y += p.dy
+  
+    if p.x<0   then p.x=0 end
+    if p.x>120 then p.x=120 end
+    if p.y<0   then p.y=0 end
+    if p.y>120 then p.y=120 end
 end
 
 function _update()
