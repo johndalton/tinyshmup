@@ -1,4 +1,4 @@
-# TODO List
+`# TODO List
 
 Here is a list of things I want to add. I will add things as I think of them and ignore the list if I feel like it. As usual I will try things fiirst and research later, or not at all.
 
@@ -45,6 +45,8 @@ We absolutely need boss battles. Later.
 	* Revised some basic trig using http://www.helixsoft.nl/articles/circle/sincos.htm as a reference!   
 * Player powerups should include things like spread shots.
 
+
+
 ### Guided
 
 * Missiles for both player and enemies. These need to change course toward a target. They also need a time limit or some other way of ensuring they don't stay on screen for ever.
@@ -75,14 +77,15 @@ An object can be given a movement command which might complete when some conditi
 
 Some movement functions we'd like to have:
 
-* `move_to(x, y)`
-* `move_straight_towards(target)`
+* `move_to_pos(object, x, y)`
+* `move_to_target(object, target)`
   * recalculate destination each frame, and always take the shortest path
-* `move_turning_towards(target, rate_of_turn)`
+* `move_turning_pos(object, x ,y)`
+* `move_turning_target(object, target)`
   * recalculate destination each frame, but assume a fixed rate of turn
-* `move_straight_ahead()`
+* `move_straight_ahead(object)`
   * Maintain course. This suggests that objects know their current direction and speed
-* `move_nowhere()`
+* `move_nowhere(object)`
   * How is this different from is_moving = false?
   * …or move_straight_ahead with a speed of zero?
   * Really we just want this for simplification, I think; it's an implementation detail to minimise leakage about movement states into other parts of the code. Everything has a movement function, even if that function is a noop.
