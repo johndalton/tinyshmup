@@ -136,6 +136,55 @@ function draw_health(x, y)
 end
 
 -->8
+-- movement
+
+function update_position(s)
+  if s.ispolar == true then
+      s.dx=s.speed*cos(s.direction)
+      s.dy=s.speed*sin(s.direction)
+  end
+
+  s.x+=s.dx
+  s.y+=s.dy
+  -- out of bounds check handled elsewhere
+end
+
+function move_to_pos(s, x, y)
+  -- FIXME handle non-polar movement
+  s.direction=atan2(x-s.x,y-s.y)
+  update_position(s)
+end
+
+function move_to_target(s, t)
+  move_to_pos(s, t.x, t.y)
+end
+
+function move_turning_pos(s, x ,y)
+  t_direction=atan2(x-s.x,y-s.y)
+  if t_direction > s.direction + s.turnrate then
+      s.direction+=s.turnrate
+  elseif t_direction < s.direction - s.turnrate then
+      s.direction-=s.turnrate
+  end
+
+  update_position(s)
+end
+
+function move_turning_target(s, t)
+  local t2 = s.target
+  move_turning_pos(s, t2.x, t2.y)
+end
+
+function move_straight_ahead(s)
+  -- no change to direction or speed
+  update_position(s)
+end
+
+function move_nowhere(s)
+  -- no change to position
+end
+
+-->8
 -- collision detection
 -- *** from: http://www.lexaloffle.com/bbs/?tid=2179
 -- *** pixel-perfect collision detection by joshmillard
@@ -318,18 +367,22 @@ enemy_types["saucer"]={
   timers={12,50,6},
   dxtarget={1.5,0,-1.5,0},
   dytarget={0,0.5,-0.5,0,0.5},
-  move=move_with_timers
+  move=function(self)
+    move_with_timers(self)
+end
 }
 enemy_types["diamond"]={
   name="diamond",
-  dx=0, dy=0, a=1, w=7, h=6,
+  ispolar=true,
+  dx=0, dy=0, w=7, h=6,
   hp=2, dmg=0, timer=1, ticks=0,
   xmove=0, ymove=0, sprite=9,
   bsp=48, pts=10,
-  timers={10,40,6},
-  dxtarget={0.5,-1,0},
-  dytarget={0,0.5},
-  move=move_with_timers
+  speed=0.3, direction=0.5, turnrate=0.1,
+  target={},
+  move=function(self)
+    move_turning_target(self,target)
+  end
 }
 
 function random_enemy()
@@ -351,8 +404,7 @@ function new_enemy(x,y,n)
   end
   s.x=x
   s.y=y
-
-  s.move=move_with_timers
+  s.target=p
 
   return s
 end
@@ -397,7 +449,7 @@ function move_enemy(s)
     add(smoke, make_smoke(s))
   end
   
-  s.move(s)
+  s:move()
 
   if out_of_bounds(s)
   then
