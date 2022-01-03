@@ -110,6 +110,7 @@ function play_game()
   sparks  = {}
   add(aliens, new_enemy(5,5,"saucer"))
   p=setup_player()
+  player_cannon_powerup()
 end
 
 function game_over()
@@ -252,9 +253,9 @@ function setup_player()
   -- player cannons
   p.bullets  = 0
   p.maxshots = 8
-  p.shotpwr  = true
+  p.shotpwr  = 0
   p.cannon   = 0  -- left or right
-  p.spread   = 0.01 -- from vertical
+  p.spreadidx = 1 -- messy tracking
   p.cooldown = 5  -- between shots
   p.shottmr  = 0  -- cooldown tmr
   p.bdy      = 3 -- bullet speed
@@ -275,14 +276,10 @@ function move_player()
   if btn(4) and p.shottmr == 0
   then
     fire_player_bullet()
-    if p.pwrup then
-      -- another one!
-      fire_player_bullet()
-      p.spread*=-1
-    end
-    sfx(2)
     p.shottmr = p.cooldown
   end
+
+  if btnp(5) then player_cannon_powerup() end 
  
   p.x += p.dx
   p.y += p.dy
@@ -339,6 +336,32 @@ function draw_player()
   --sspr(8,8,8,16,p.x+8,p.y,8,16,1)
 end
 
+function player_cannon_powerup()
+  p.shotpwr+=1
+  if p.shotpwr > 4 then
+    p.shotpwr = 1
+  end
+
+  if p.shotpwr == 1 then
+    p.maxshots=8
+    p.cooldown = 8  -- between shots
+    p.shottmr  = 0  -- cooldown tmr
+  elseif p.shotpwr == 2 then
+    p.maxshots=12
+    p.cooldown = 5  -- between shots
+    p.shottmr  = 0  -- cooldown tmr
+  elseif p.shotpwr == 3 then
+    p.maxshots=16
+    p.cooldown = 8  -- between shots
+    p.shottmr  = 1  -- cooldown tmr
+  else
+    p.maxshots=20
+    p.cooldown = 8  -- between shots
+    p.shottmr  = 2  -- cooldown tmr
+  end
+
+end 
+
 function player_cannon_offset()
   -- bullets fire from alternate cannons:
   -- here we set the appropriate x offset.
@@ -354,31 +377,57 @@ function player_cannon_offset()
 end
 
 function player_cannon_spread()
-  local spread=p.spread
-  p.spread*=-1
-  return spread
+
+  local spread={}
+  spread[1] = {0}
+  spread[2] = {0}
+  spread[3] = {-0.02, 0, 0.02}
+  spread[4] = {-0.03, -0.02, 0, 0.02, 0.03}
+
+  p.spreadidx+=1
+  if (p.spreadidx > #spread[p.shotpwr]) p.spreadidx=1
+
+  local shotspread=spread[p.shotpwr][p.spreadidx]
+
+  return shotspread
 end
 
-function fire_player_bullet()
-  if (p.bullets>=p.maxshots) return
+function player_cannon_bullets()
+  local shotsperlvl={}
+  shotsperlvl[1]=1
+  shotsperlvl[2]=2
+  shotsperlvl[3]=3
+  shotsperlvl[4]=5
 
+  return shotsperlvl[p.shotpwr]
+end
+
+function player_bullet(d)
   -- initial position
   local initx=p.x+player_cannon_offset()
   local inity=p.y-1
-
-  -- 0.25 is straight up.
-  local initdirection=0.25+player_cannon_spread()
 
   local bullet={
     x=initx,y=inity,
     w=1,h=2,
     ispolar=true,
-    speed=p.bdy, direction=initdirection, turnrate=0,
+    speed=p.bdy, direction=d, turnrate=0,
     sp=0,player=true}
-  add(bullets,bullet)
-  p.bullets+=1
 
+  return bullet
+end
+
+function fire_player_bullet()
+  if (p.bullets>=p.maxshots) return
+
+  -- 0.25 is straight up.
+  for i=1,player_cannon_bullets() do
+    add(bullets,player_bullet(0.25+player_cannon_spread()))
+    p.bullets+=1
+    sfx(2)
   end
+
+end
 
 -->8
 -- aliens
