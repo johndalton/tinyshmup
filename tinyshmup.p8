@@ -252,10 +252,12 @@ function setup_player()
   -- player cannons
   p.bullets  = 0
   p.maxshots = 8
+  p.shotpwr  = true
   p.cannon   = 0  -- left or right
+  p.spread   = 0.01 -- from vertical
   p.cooldown = 5  -- between shots
   p.shottmr  = 0  -- cooldown tmr
-  p.bdy      = -4 -- bullet speed
+  p.bdy      = 3 -- bullet speed
 
   return p
 end
@@ -273,6 +275,11 @@ function move_player()
   if btn(4) and p.shottmr == 0
   then
     fire_player_bullet()
+    if p.pwrup then
+      -- another one!
+      fire_player_bullet()
+      p.spread*=-1
+    end
     sfx(2)
     p.shottmr = p.cooldown
   end
@@ -332,27 +339,46 @@ function draw_player()
   --sspr(8,8,8,16,p.x+8,p.y,8,16,1)
 end
 
-function fire_player_bullet()
-  if (p.bullets<p.maxshots)
+function player_cannon_offset()
+  -- bullets fire from alternate cannons:
+  -- here we set the appropriate x offset.
+  local boffset=2
+  if (p.cannon==1)
   then
-    -- bullets fire from alternate cannons:
-    -- here we set the appropriate x offset.
-    local boffset=2
-    if (p.cannon==1)
-    then
-      boffset+=3
-      p.cannon=0
-    else
-      p.cannon=1
-    end
-    local bullet={
-      x=p.x+boffset,y=p.y-1,
-      dx=0,dy=p.bdy,w=1,h=2,
-      sp=0,player=true}
-    add(bullets,bullet)
-    p.bullets+=1
+    boffset+=3
+    p.cannon=0
+  else
+    p.cannon=1
   end
+  return boffset
 end
+
+function player_cannon_spread()
+  local spread=p.spread
+  p.spread*=-1
+  return spread
+end
+
+function fire_player_bullet()
+  if (p.bullets>=p.maxshots) return
+
+  -- initial position
+  local initx=p.x+player_cannon_offset()
+  local inity=p.y-1
+
+  -- 0.25 is straight up.
+  local initdirection=0.25+player_cannon_spread()
+
+  local bullet={
+    x=initx,y=inity,
+    w=1,h=2,
+    ispolar=true,
+    speed=p.bdy, direction=initdirection, turnrate=0,
+    sp=0,player=true}
+  add(bullets,bullet)
+  p.bullets+=1
+
+  end
 
 -->8
 -- aliens
@@ -507,8 +533,7 @@ function remove_bullet(b)
 end 
 
 function move_bullet(b)
-  b.x += b.dx
-  b.y += b.dy
+  move_straight_ahead(b)
   if out_of_bounds(b)
   then
     remove_bullet(b)
@@ -524,6 +549,7 @@ function move_bullet(b)
           for i=1,3 do
             add(sparks, make_spark(a))
           end
+          break
         end
       end
     else
