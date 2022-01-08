@@ -46,6 +46,7 @@ function update_game()
   end
 
   foreach(bullets,move_bullet)
+  foreach(missiles,move_missile)
   foreach(smoke, update_smoke)
   foreach(sparks, update_spark)
 
@@ -279,7 +280,19 @@ function move_player()
     p.shottmr = p.cooldown
   end
 
-  if btnp(5) then player_cannon_powerup() end 
+  -- if btnp(5) then player_cannon_powerup() end 
+  if btnp(5) then
+    -- Try to pick the target closest to our x pos.
+    local ct={x=0,y=64}
+    for a in all(aliens) do
+      if a.x < p.x and a.x > ct.x then
+        ct=a
+      elseif a.x > p.x and (a.x-p.x) < (p.x-ct.x) then
+        ct=a
+      end
+    end
+    fire_missile(p, ct)
+  end 
  
   p.x += p.dx
   p.y += p.dy
@@ -557,6 +570,8 @@ smoke={}
 smoke_colour={8,10,6,6,5,12}
 sparks={}
 
+missiles={}
+
 function fire_enemy_bullet(e, s, t)
   -- by default a bullet travels straight down.
   local bullet={
@@ -703,6 +718,66 @@ function draw_spark(s)
   pset(s.x,s.y,smoke_colour[s.colour])
 end
 
+function fire_missile(s, t)
+  -- fire missile from source at target.
+  local missile={
+    x=s.x+s.w/2,y=s.y+s.h,
+    dx=0,dy=2,w=2,h=2,sp=50,
+    direction=0.25,turnrate=0.2,
+    sp=2,target={},player=true}
+  -- if there's a target, aim at it.
+  if t
+  then
+    missile.target=t
+    missile.move=function(self)
+      move_turning_target(self,t)
+    end
+  end
+  add(missiles,missile)
+end
+
+function remove_missile(m)
+  del(missiles,m)
+end 
+
+function move_missile(m)
+  m:move()
+  add(sparks, make_spark(m))
+  if out_of_bounds(m)
+  then
+    remove_missile(m)
+  else
+    if m.player
+    then
+      for a in all(aliens) do
+        if check_hit(a,m)
+        then
+          sfx(0)
+          a.dmg += 15
+          remove_missile(m)
+          for i=1,15 do
+            add(sparks, make_spark(a))
+          end
+          break
+        end
+      end
+    else
+      if check_hit(p,m)
+      then
+        sfx(1)
+        p.dmg += 15
+        remove_missile(m)
+        for i=1,15 do
+          add(sparks, make_spark(p))
+        end
+      end
+    end
+  end
+end
+
+function draw_missile(m)
+  spr(m.sp,m.x,m.y)
+end
 -->8
 -- timers
 
