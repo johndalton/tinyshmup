@@ -121,3 +121,7 @@ check_timer(t)
 ```
 
 
+
+Wait, hold the presses - this article about using coroutines to build a cutscene animation system looks perfect for our state management system. I think timers are just a tool for state management, and fit really nicely into this:
+https://docs.google.com/document/d/14HzJnqKdVtBjN2vN9-rZHLR3rlgwWwDym8ehzhKRqFo/edit
+
